@@ -1,0 +1,632 @@
+/* ==========================================================================
+   Burry chat widget - styled to match the portfolio
+   Palette: crimson #d4142f · gold #e5b25d · copper #b8643a · chestnut #5a2a1c
+            cream #f6eee1 · ink #080405   |   Typeface: Space Grotesk
+   Everything is scoped under .burry-root so it can't clash with the page.
+   ========================================================================== */
+
+.burry-root {
+  --b-crimson: #d4142f;
+  --b-gold: #e5b25d;
+  --b-copper: #b8643a;
+  --b-chestnut: #5a2a1c;
+  --b-cream: #f6eee1;
+  --b-ink: #080405;
+  --b-muted: rgba(246, 238, 225, 0.62);
+  --b-line: rgba(246, 238, 225, 0.12);
+  --b-glass: rgba(26, 12, 15, 0.55);
+  --b-grad: linear-gradient(110deg, #d4142f, #b8643a 60%, #e5b25d);
+  --b-avatar: linear-gradient(140deg, #d4142f 0%, #a3341f 62%, #b8643a 100%);
+  --b-user: linear-gradient(120deg, #c8122c, #a5532e);
+  --b-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --b-size: 64px;
+  --b-edge: max(20px, env(safe-area-inset-right, 0px));
+  --b-edge-y: max(20px, env(safe-area-inset-bottom, 0px));
+
+  font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--b-cream);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.burry-root *,
+.burry-root *::before,
+.burry-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.burry-root button,
+.burry-root textarea {
+  font: inherit;
+  color: inherit;
+}
+
+.burry-root :focus-visible {
+  outline: 2px solid var(--b-gold);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------- Avatar */
+
+.burry-face {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.burry-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: burry-blink 5.5s infinite;
+}
+
+@keyframes burry-blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+
+.burry-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--b-avatar);
+  border: 1px solid rgba(229, 178, 93, 0.7);
+  overflow: hidden;
+}
+
+.burry-avatar.lg {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.burry-avatar.sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 2px;
+  margin-top: 2px;
+}
+
+/* -------------------------------------------------------------- Launcher */
+
+.burry-launcher {
+  position: fixed;
+  right: var(--b-edge);
+  bottom: var(--b-edge-y);
+  z-index: 9998;
+  width: var(--b-size);
+  height: var(--b-size);
+  border-radius: 50%;
+  border: 1px solid rgba(229, 178, 93, 0.75);
+  background: var(--b-avatar);
+  box-shadow: 0 16px 44px -10px rgba(212, 20, 47, 0.8), 0 0 0 5px rgba(8, 4, 5, 0.45);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.35s var(--b-ease), box-shadow 0.35s;
+}
+
+.burry-launcher:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 20px 50px -8px rgba(229, 178, 93, 0.55), 0 0 0 5px rgba(8, 4, 5, 0.45);
+}
+
+.burry-launcher:active {
+  transform: scale(0.96);
+}
+
+.burry-ico {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.25s, transform 0.35s var(--b-ease);
+}
+
+.burry-ico-chat {
+  width: 44px;
+  height: 44px;
+}
+
+.burry-ico-close {
+  width: 26px;
+  height: 26px;
+  opacity: 0;
+  transform: rotate(-70deg) scale(0.6);
+}
+
+.burry-ico-close svg {
+  width: 100%;
+  height: 100%;
+}
+
+.burry-root.is-open .burry-ico-chat {
+  opacity: 0;
+  transform: rotate(70deg) scale(0.6);
+}
+
+.burry-root.is-open .burry-ico-close {
+  opacity: 1;
+  transform: none;
+}
+
+/* unread dot */
+.burry-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--b-gold);
+  border: 3px solid var(--b-ink);
+  box-shadow: 0 0 12px var(--b-gold);
+}
+
+.burry-root.is-open .burry-dot,
+.burry-root.seen .burry-dot {
+  display: none;
+}
+
+/* ring + wiggle played every time the reminder appears */
+.burry-launcher.ping::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--b-gold);
+  animation: burry-ring 1.6s var(--b-ease) 1;
+  pointer-events: none;
+}
+
+.burry-launcher.ping .burry-ico-chat {
+  animation: burry-wiggle 0.9s ease 1;
+}
+
+@keyframes burry-ring {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+
+@keyframes burry-wiggle {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-12deg); }
+  40% { transform: rotate(10deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(4deg); }
+}
+
+/* ----------------------------------------------------- Reminder bubble */
+
+.burry-nudge {
+  position: fixed;
+  right: var(--b-edge);
+  bottom: calc(var(--b-edge-y) + var(--b-size) + 14px);
+  z-index: 9997;
+  max-width: min(276px, calc(100vw - 40px));
+  display: flex;
+  align-items: flex-start;
+  background: var(--b-cream);
+  color: #1a0b0d;
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(229, 178, 93, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: 100% 100%;
+  transition: opacity 0.35s var(--b-ease), transform 0.45s var(--b-ease), visibility 0s linear 0.45s;
+}
+
+.burry-nudge.show {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s;
+}
+
+.burry-nudge-open {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 14px 4px 14px 16px;
+  border-radius: 18px 0 0 6px;
+}
+
+.burry-nudge-open b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.burry-nudge-open span {
+  display: block;
+  font-size: 13px;
+  color: #6b4a3d;
+  margin-top: 2px;
+}
+
+.burry-nudge-x {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin: 6px 6px 0 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #6b4a3d;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.burry-nudge-x:hover {
+  background: rgba(90, 42, 28, 0.12);
+}
+
+.burry-root.is-open .burry-nudge {
+  display: none;
+}
+
+/* ---------------------------------------------------------- Chat window */
+
+.burry-window {
+  position: fixed;
+  right: var(--b-edge);
+  bottom: calc(var(--b-edge-y) + var(--b-size) + 14px);
+  z-index: 9999;
+  width: 392px;
+  max-width: calc(100vw - 24px);
+  height: min(640px, calc(100vh - 130px));
+  height: min(640px, calc(100dvh - 130px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 26px;
+  border: 1px solid var(--b-line);
+  background: linear-gradient(180deg, #150a0d, #0b0507);
+  box-shadow: 0 40px 120px -30px rgba(212, 20, 47, 0.5), 0 24px 70px -20px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.97);
+  transform-origin: 100% 100%;
+  transition: opacity 0.3s var(--b-ease), transform 0.45s var(--b-ease), visibility 0s linear 0.45s;
+}
+
+.burry-root.is-open .burry-window {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s;
+}
+
+/* header */
+.burry-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 14px 14px 16px;
+  border-bottom: 1px solid var(--b-line);
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(212, 20, 47, 0.3), transparent 62%),
+    radial-gradient(90% 140% at 100% 0%, rgba(229, 178, 93, 0.12), transparent 60%),
+    rgba(246, 238, 225, 0.02);
+}
+
+.burry-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.burry-id b {
+  display: block;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.burry-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--b-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.burry-status i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-gold);
+  box-shadow: 0 0 10px var(--b-gold);
+}
+
+.burry-icon-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--b-muted);
+  cursor: pointer;
+  transition: color 0.25s, background 0.25s, border-color 0.25s;
+}
+
+.burry-icon-btn:hover {
+  color: var(--b-cream);
+  background: rgba(229, 178, 93, 0.1);
+  border-color: var(--b-line);
+}
+
+.burry-icon-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* conversation */
+.burry-log {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 238, 225, 0.2) transparent;
+}
+
+.burry-log::-webkit-scrollbar { width: 6px; }
+.burry-log::-webkit-scrollbar-thumb { background: rgba(246, 238, 225, 0.18); border-radius: 6px; }
+
+.burry-msg {
+  display: flex;
+  gap: 8px;
+  max-width: 90%;
+  animation: burry-in 0.4s var(--b-ease) both;
+}
+
+.burry-msg.bot { align-self: flex-start; }
+.burry-msg.user { align-self: flex-end; }
+
+@keyframes burry-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.burry-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.burry-msg.bot .burry-bubble {
+  background: rgba(246, 238, 225, 0.06);
+  border: 1px solid var(--b-line);
+  border-bottom-left-radius: 6px;
+}
+
+.burry-msg.user .burry-bubble {
+  background: var(--b-user);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 10px 28px -12px rgba(212, 20, 47, 0.8);
+  white-space: pre-wrap;
+}
+
+.burry-msg.error .burry-bubble {
+  background: rgba(212, 20, 47, 0.12);
+  border-color: rgba(212, 20, 47, 0.55);
+  color: #ffb3bd;
+}
+
+/* rich text inside bot bubbles */
+.burry-bubble p + p,
+.burry-bubble p + ul,
+.burry-bubble p + ol,
+.burry-bubble ul + p,
+.burry-bubble ol + p,
+.burry-bubble pre + p,
+.burry-bubble p + pre { margin-top: 8px; }
+
+.burry-bubble ul,
+.burry-bubble ol { padding-left: 20px; margin-top: 4px; }
+
+.burry-bubble li { margin: 3px 0; padding-left: 2px; }
+.burry-bubble li::marker { color: var(--b-gold); }
+.burry-bubble strong { font-weight: 700; color: #fff; }
+
+.burry-bubble a {
+  color: var(--b-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(229, 178, 93, 0.5);
+  transition: text-decoration-color 0.2s;
+}
+
+.burry-bubble a:hover { text-decoration-color: var(--b-gold); }
+
+.burry-bubble code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12.5px;
+  background: rgba(246, 238, 225, 0.1);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.burry-bubble pre {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--b-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+.burry-bubble pre code { background: none; padding: 0; }
+
+/* typing indicator */
+.burry-typing {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 2px;
+  height: 22px;
+}
+
+.burry-typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-gold);
+  animation: burry-bounce 1.2s infinite ease-in-out;
+}
+
+.burry-typing i:nth-child(2) { animation-delay: 0.15s; }
+.burry-typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes burry-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* quick replies, same look as the portfolio's chips */
+.burry-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 36px;
+  animation: burry-in 0.5s var(--b-ease) 0.15s both;
+}
+
+.burry-chip {
+  border: 1px solid var(--b-line);
+  border-radius: 99px;
+  background: var(--b-glass);
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.3s var(--b-ease), color 0.3s, border-color 0.3s, transform 0.3s var(--b-ease);
+}
+
+.burry-chip:hover {
+  background: var(--b-gold);
+  border-color: var(--b-gold);
+  color: #1a0b0d;
+  transform: translateY(-2px);
+}
+
+/* composer */
+.burry-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 14px 6px;
+}
+
+.burry-form textarea {
+  flex: 1;
+  min-height: 46px;
+  max-height: 112px;
+  resize: none;
+  background: rgba(246, 238, 225, 0.04);
+  border: 1px solid var(--b-line);
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.burry-form textarea::placeholder { color: var(--b-muted); }
+
+.burry-form textarea:focus,
+.burry-form textarea:focus-visible {
+  outline: none;
+  border-color: var(--b-gold);
+  box-shadow: 0 0 0 4px rgba(229, 178, 93, 0.12);
+}
+
+.burry-send {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--b-grad);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 30px -10px rgba(212, 20, 47, 0.8);
+  transition: transform 0.3s var(--b-ease), box-shadow 0.3s, opacity 0.3s;
+}
+
+.burry-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px -8px rgba(229, 178, 93, 0.55);
+}
+
+.burry-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.burry-send svg { width: 19px; height: 19px; }
+
+.burry-foot {
+  padding: 4px 16px 14px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--b-muted);
+}
+
+/* ---------------------------------------------------------------- Mobile */
+
+@media (max-width: 520px) {
+  .burry-root { --b-size: 58px; }
+  .burry-window {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    border-radius: 22px;
+    bottom: calc(var(--b-edge-y) + var(--b-size) + 12px);
+    height: min(76vh, 640px);
+    height: min(76dvh, 640px);
+  }
+  .burry-ico-chat { width: 40px; height: 40px; }
+  .burry-form textarea { font-size: 16px; } /* stops iOS zooming into the field */
+}
+
+/* ------------------------------------------------------- Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .burry-root *,
+  .burry-root *::before,
+  .burry-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
