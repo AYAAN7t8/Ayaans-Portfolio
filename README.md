@@ -1,3 +1,4 @@
+
 # Burry: portfolio chatbot
 
 Burry is an AI assistant for your portfolio. It lives in the bottom-right corner of the page, reminds visitors to chat every 8-9 seconds, and answers questions about your skills, projects, experience and background using the OpenRouter API.
@@ -81,3 +82,6 @@ macOS/Linux: replace step 2 with `python3.11 -m venv .venv && source .venv/bin/a
 ## Going live
 
 `python backend/app.py` is a development server. For a public site, host the backend with a production server (e.g. `waitress` on Windows or `gunicorn` on Linux), set `SITE_URL` and `CORS_ORIGINS` in the environment, and keep the API key in the host's environment variables. Never put the key in the HTML or JavaScript.
+=======
+# Ayaans-Portfolio
+
