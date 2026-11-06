@@ -79,9 +79,27 @@ macOS/Linux: replace step 2 with `python3.11 -m venv .venv && source .venv/bin/a
 | "Getting a lot of questions" | The free model is rate-limited. Wait a few seconds or switch model. |
 | Check the setup quickly | Visit <http://127.0.0.1:5000/api/health> |
 
+## Deploy on Render
+
+The repo includes a `render.yaml`, so Render can set everything up for you.
+
+1. Push this project to GitHub (`.env` is git-ignored, so your key stays private).
+2. On <https://dashboard.render.com>: **New > Blueprint**, pick this repository, and click **Apply**.
+3. When asked, paste your **OPENROUTER_API_KEY**. (Or later: your service > **Environment** > add `OPENROUTER_API_KEY`.)
+4. Wait for the deploy, then open `https://<your-service>.onrender.com`. Check `https://<your-service>.onrender.com/api/health` shows `"api_key_configured": true`.
+
+Prefer setting it up by hand? **New > Web Service**, pick the repo, then:
+
+| Setting | Value |
+|---|---|
+| Runtime | Python 3 |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 2 --threads 8 --timeout 120` |
+| Environment | `OPENROUTER_API_KEY` = your key, `PYTHON_VERSION` = `3.11.9` |
+
+Notes: on Render's free plan the service sleeps after ~15 minutes idle, so the first visit afterwards takes up to a minute to wake. The page and the chatbot are served from the same address, so no CORS setup is needed. If you host the page somewhere else (e.g. GitHub Pages), add `<script>window.BURRY_API_URL = "https://<your-service>.onrender.com";</script>` before `burry.js` and set `CORS_ORIGINS` on Render to that site's address.
+
 ## Going live
 
 `python backend/app.py` is a development server. For a public site, host the backend with a production server (e.g. `waitress` on Windows or `gunicorn` on Linux), set `SITE_URL` and `CORS_ORIGINS` in the environment, and keep the API key in the host's environment variables. Never put the key in the HTML or JavaScript.
-=======
-# Ayaans-Portfolio
 

@@ -15,15 +15,21 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 import time
 from collections import defaultdict, deque
 from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
+from flask import Flask, Response, abort, jsonify, request, send_from_directory, stream_with_context
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-from knowledge import build_system_prompt
+# Make "knowledge" importable no matter which folder the server is started from
+# (e.g. gunicorn on Render runs from the project root).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from knowledge import build_system_prompt  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -32,7 +38,13 @@ from knowledge import build_system_prompt
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
 
-load_dotenv(ROOT_DIR / ".env")
+load_dotenv(ROOT_DIR / ".env")  # local only; on Render, set variables in the dashboard
+
+# The portfolio page can live at the project root or in frontend/.
+INDEX_DIR = next(
+    (d for d in (FRONTEND_DIR, ROOT_DIR) if (d / "index.html").is_file()),
+    ROOT_DIR,
+)
 
 
 def _env(name: str, default: str = "") -> str:
@@ -48,7 +60,8 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = _env("OPENROUTER_MODEL", "openrouter/free")
 FALLBACK_MODELS = [m.strip() for m in _env("OPENROUTER_FALLBACK_MODELS").split(",") if m.strip()]
 
-SITE_URL = _env("SITE_URL", "http://127.0.0.1:5000")
+# Render sets RENDER_EXTERNAL_URL automatically (e.g. https://your-app.onrender.com).
+SITE_URL = _env("SITE_URL") or _env("RENDER_EXTERNAL_URL") or "http://127.0.0.1:5000"
 SITE_TITLE = _env("SITE_TITLE", "Burry - Portfolio Assistant")
 
 TEMPERATURE = float(_env("TEMPERATURE", "0.5"))
@@ -74,6 +87,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("burry")
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR / "static"), static_url_path="/static")
+# Render (and most hosts) sit behind a proxy: trust its X-Forwarded-* headers so
+# request.remote_addr is the real visitor IP (needed for the rate limiter).
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 
 # --------------------------------------------------------------------------- #
@@ -213,7 +229,9 @@ def stream_reply(upstream: requests.Response):
 
 @app.get("/")
 def home():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    if not (INDEX_DIR / "index.html").is_file():
+        abort(404)
+    return send_from_directory(INDEX_DIR, "index.html")
 
 
 @app.get("/api/health")
@@ -232,7 +250,7 @@ def chat():
         return ("", 204)
 
     if not OPENROUTER_API_KEY:
-        log.error("OPENROUTER_API_KEY is missing. Add it to the .env file.")
+        log.error("OPENROUTER_API_KEY is missing. Add it to .env (local) or Render's Environment settings.")
         return jsonify(error="Burry isn't configured yet. The site owner needs to add an OpenRouter API key."), 503
 
     if rate_limited(request.remote_addr or "unknown"):
@@ -263,8 +281,10 @@ def chat():
 
 
 if __name__ == "__main__":
+    # Local development only. On Render the app is started by gunicorn (see render.yaml).
     port = int(_env("PORT", "5000"))
+    host = _env("HOST", "127.0.0.1")
     if not OPENROUTER_API_KEY:
         log.warning("No OPENROUTER_API_KEY found - copy .env.example to .env and add your key.")
-    log.info("Burry is running at http://127.0.0.1:%s  (model: %s)", port, MODEL)
-    app.run(host="127.0.0.1", port=port, debug=_env("FLASK_DEBUG", "1") == "1")
+    log.info("Burry is running at http://%s:%s  (model: %s)", host, port, MODEL)
+    app.run(host=host, port=port, debug=_env("FLASK_DEBUG", "1") == "1")

@@ -1,0 +1,20 @@
+# Render Blueprint - deploys the portfolio + Burry chatbot as one web service.
+# In Render: New > Blueprint > pick this repo. You'll be asked for OPENROUTER_API_KEY.
+services:
+  - type: web
+    name: ayaans-portfolio
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # gthread workers let several visitors stream chat replies at the same time.
+    startCommand: gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 2 --threads 8 --timeout 120
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: OPENROUTER_API_KEY
+        sync: false          # secret: you paste it in the Render dashboard
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: FLASK_DEBUG
+        value: "0"
