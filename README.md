@@ -94,7 +94,7 @@ Prefer setting it up by hand? **New > Web Service**, pick the repo, then:
 |---|---|
 | Runtime | Python 3 |
 | Build Command | `pip install -r requirements.txt` |
-| Start Command | `gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 2 --threads 8 --timeout 120` |
+| Start Command | `gunicorn app:app` (Render's default; settings come from `gunicorn.conf.py`) |
 | Environment | `OPENROUTER_API_KEY` = your key, `PYTHON_VERSION` = `3.11.9` |
 
 Notes: on Render's free plan the service sleeps after ~15 minutes idle, so the first visit afterwards takes up to a minute to wake. The page and the chatbot are served from the same address, so no CORS setup is needed. If you host the page somewhere else (e.g. GitHub Pages), add `<script>window.BURRY_API_URL = "https://<your-service>.onrender.com";</script>` before `burry.js` and set `CORS_ORIGINS` on Render to that site's address.

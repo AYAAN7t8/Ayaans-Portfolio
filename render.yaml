@@ -7,7 +7,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     # gthread workers let several visitors stream chat replies at the same time.
-    startCommand: gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 2 --threads 8 --timeout 120
+    startCommand: gunicorn app:app
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
